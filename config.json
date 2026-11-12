@@ -1,0 +1,16 @@
+{
+    "indicadores_cuantitativos": [
+        {"clave": "I. CUMPLIMIENTO", "nombre": "I. Cumplimiento del Desarrollo"},
+        {"clave": "II. DESARROLLO", "nombre": "II. Desarrollo de Competencias"},
+        {"clave": "III. IMPACTO", "nombre": "III. Impacto en el Entorno"},
+        {"clave": "IV. ARTICULACIÓN", "nombre": "IV. Articulación Institucional"},
+        {"clave": "V. ALCANCE", "nombre": "V. Alcance de las Prácticas"},
+        {"clave": "GLOBAL DEL PROCESO", "nombre": "Evaluación Global"}
+    ],
+    "indicadores_cualitativos": [
+        {"clave": "PRINCIPAL FORTALEZA", "nombre": "Fortaleza"},
+        {"clave": "PRINCIPAL ASPECTO", "nombre": "Aspecto a Mejorar"},
+        {"clave": "PRINCIPAL IMPACTO", "nombre": "Impacto Observado"},
+        {"clave": "RECOMENDACIÓN GENERAL", "nombre": "Recomendación"}
+    ]
+}

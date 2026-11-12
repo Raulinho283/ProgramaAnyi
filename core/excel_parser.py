@@ -1,6 +1,8 @@
 import pandas as pd
 import hashlib
 import warnings
+import json
+import os
 
 # Ignoramos advertencias de estilos de openpyxl
 warnings.filterwarnings("ignore", category=UserWarning, module="openpyxl")
@@ -36,6 +38,20 @@ def extraer_datos_hoja(df):
         "cualitativos": {}
     }
     
+    # 1. Cargar la configuración dinámica
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    ruta_config = os.path.join(base_dir, 'config.json')
+    
+    try:
+        with open(ruta_config, 'r', encoding='utf-8') as f:
+            config = json.load(f)
+    except Exception:
+        # Si el archivo falla, retornamos datos inválidos
+        return datos
+
+    indicadores_claves = [(item["clave"], item["nombre"]) for item in config.get("indicadores_cuantitativos", [])]
+    cualitativas_claves = [(item["clave"], item["nombre"]) for item in config.get("indicadores_cualitativos", [])]
+    
     for i, row in df.iterrows():
         for j, col_val in enumerate(row):
             texto_celda = limpiar_texto(col_val).upper()
@@ -43,12 +59,11 @@ def extraer_datos_hoja(df):
             if not texto_celda:
                 continue
                 
-            # --- METADATOS (Aseguramos que solo capture la primera coincidencia) ---
+            # --- METADATOS ---
             if "NOMBRE DOCENTE" in texto_celda and not datos["metadatos"]["docente"]:
                 datos["metadatos"]["docente"] = limpiar_texto(obtener_siguiente_valor(row, j))
                 
             elif ("PRÁCTICA" in texto_celda or "PRACTICA" in texto_celda) and not datos["metadatos"]["modalidad"]:
-                # Evitamos falsos positivos con otros títulos de la hoja
                 if "ESCENARIO" not in texto_celda and "EVALUACIÓN" not in texto_celda and "DESARROLLO" not in texto_celda and "ITEM" not in texto_celda:
                     datos["metadatos"]["modalidad"] = limpiar_texto(obtener_siguiente_valor(row, j))
                     
@@ -62,40 +77,22 @@ def extraer_datos_hoja(df):
                 except (ValueError, TypeError):
                     pass
             
-            # --- INDICADORES CUANTITATIVOS ---
-            indicadores_claves = [
-                ("I. CUMPLIMIENTO", "I. Cumplimiento del Desarrollo"),
-                ("II. DESARROLLO", "II. Desarrollo de Competencias"),
-                ("III. IMPACTO", "III. Impacto en el Entorno"),
-                ("IV. ARTICULACIÓN", "IV. Articulación Institucional"),
-                ("V. ALCANCE", "V. Alcance de las Prácticas"),
-                ("GLOBAL DEL PROCESO", "Evaluación Global")
-            ]
-            
+            # --- INDICADORES CUANTITATIVOS DINÁMICOS ---
             for clave_busqueda, nombre_estandar in indicadores_claves:
                 if clave_busqueda in texto_celda:
                     val = obtener_siguiente_valor(row, j)
                     try:
-                        # Aseguramos que se guarde como número decimal
                         datos["cuantitativos"][nombre_estandar] = float(val)
                     except (ValueError, TypeError):
                         pass
 
-            # --- RESPUESTAS CUALITATIVAS ---
-            cualitativas_claves = [
-                ("PRINCIPAL FORTALEZA", "Fortaleza"),
-                ("PRINCIPAL ASPECTO", "Aspecto a Mejorar"),
-                ("PRINCIPAL IMPACTO", "Impacto Observado"),
-                ("RECOMENDACIÓN GENERAL", "Recomendación")
-            ]
-            
+            # --- RESPUESTAS CUALITATIVAS DINÁMICAS ---
             for clave_busqueda, nombre_estandar in cualitativas_claves:
                 if clave_busqueda in texto_celda:
                     val = obtener_siguiente_valor(row, j)
                     if isinstance(val, str) and len(val) > 5:
                         datos["cualitativos"][nombre_estandar] = limpiar_texto(val)
 
-    # Validación final
     if datos["metadatos"]["docente"] and datos["metadatos"]["escenario"]:
         datos["valida"] = True
         
